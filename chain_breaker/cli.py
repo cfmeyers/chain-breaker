@@ -4,12 +4,14 @@
 import sys
 import click
 
+from chain_breaker.chain_breaker import render_chain
+
 
 @click.command()
-@click.argument('chain_path')
-def main(chain_path):
+@click.argument('path_to_chain')
+def main(path_to_chain):
     """Console script for chain_breaker."""
-    click.echo(chain_path)
+    render_chain(path_to_chain)
     return 0
 
 
