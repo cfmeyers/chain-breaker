@@ -47,10 +47,10 @@ def links_to_today(links):
 def render_chain(path_to_chain, title):
     clear()
     links = read_chain_links(path_to_chain)
-    links_to_today(links)
+    unbroken_links = links_to_today(links)
     print(HTML(f'<bold><purple>{title.upper()}</purple></bold>'))
 
-    output = make_blocks(reversed(links))
+    output = make_blocks(reversed(unbroken_links))
     print(HTML(f'<red>{output}</red>'))
 
 
