@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from datetime import date, timedelta
+from collections import namedtuple
 import csv
+
 from prompt_toolkit import prompt, HTML
 from prompt_toolkit import print_formatted_text as print
 from prompt_toolkit.shortcuts import clear
@@ -9,8 +11,10 @@ import dateparser
 
 """Main module."""
 
+DateWithColor = namedtuple('DateWithColor', 'date color')
 
-def read_chain_links(path_to_chain):
+
+def read_in_all_links(path_to_chain):
     links = set()
     with open(path_to_chain) as f:
         for line in f:
@@ -22,45 +26,62 @@ def read_chain_links(path_to_chain):
 def links_to_today(links):
     today = date.today()
     yesterday = today - timedelta(days=1)
-    if links == []:
+    if links == [] or links[0] not in (today, yesterday):
         return []
-    first_link = links[0]
-    chain = []
-    if first_link not in (today, yesterday):
-        return []
-    elif first_link == today:
-        chain.append(today)
-        cur_link = today
-    else:
-        chain.append(yesterday)
-        cur_link = yesterday
+    chain = [links[0]]  # either today or yesterday
 
     for link in links[1:]:
-        if link != cur_link - timedelta(days=1):
-            return chain
+        if link != chain[-1] - timedelta(days=1):
+            break
         else:
             chain.append(link)
-            cur_link = link
-    return chain
+    return list(reversed(chain))
+
+
+# TODO so ugly
+def get_this_week():
+    today = date.today()
+    day_index = today.weekday()
+    days_before_today = list(
+        reversed([today + timedelta(days=-(n + 1)) for n in range(day_index)])
+    )
+    days_after_today = [today + timedelta(days=n + 1) for n in range(6 - day_index)]
+    return days_before_today + [today] + days_after_today
+
+
+def make_dates_with_colors(unbroken_links):
+    this_week = get_this_week()
+    if unbroken_links == []:
+        return [DateWithColor(date=l, color='grey') for l in this_week]
+    remaining_days = []
+    for day in this_week:
+        if day > unbroken_links[-1]:
+            remaining_days.append(day)
+
+    # return [DateWithColor(date=l, color='red') for l in unbroken_links]
+    return [DateWithColor(date=l, color='red') for l in unbroken_links] + [
+        DateWithColor(date=l, color='grey') for l in remaining_days
+    ]
 
 
 def render_chain(path_to_chain, title):
     clear()
-    links = read_chain_links(path_to_chain)
-    unbroken_links = links_to_today(links)
+    all_links = read_in_all_links(path_to_chain)
+    unbroken_links = links_to_today(all_links)
     print(HTML(f'<bold><purple>{title.upper()}</purple></bold>'))
+    dates_with_colors = make_dates_with_colors(unbroken_links)
+    output = make_blocks(dates_with_colors)
+    print(HTML(output))
 
-    output = make_blocks(reversed(unbroken_links))
-    print(HTML(f'<red>{output}</red>'))
 
-
-def make_block(d):
-    letter = d.strftime('%A')[0].lower()
-    decorated = f"<bold><white bg='grey'>{letter}</white></bold>"
+def make_block(d: DateWithColor):
+    letter = d.date.strftime('%A')[0].lower()
+    decorated = f"<bold><white>{letter}</white></bold>"
     return f"""\
-▆▆▆
-▆{decorated}▆
-▆▆▆"""
+<{d.color}>▆▆▆</{d.color}>
+<{d.color}>▆{decorated}▆</{d.color}>
+<{d.color}>▆▆▆</{d.color}>\
+"""
 
 
 def make_blocks(links):
@@ -71,8 +92,9 @@ def make_blocks(links):
     for block in blocks:
         t, m, b = block.split('\n')
         top += f'{t} '
-        middle += f'{m}>'
+        middle += f'{m} '
         bottom += f'{b} '
+    # breakpoint()
     return f"""\
 {top}
 {middle}
