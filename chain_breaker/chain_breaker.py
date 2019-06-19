@@ -68,7 +68,7 @@ def render_chain(path_to_chain, title):
     clear()
     all_links = read_in_all_links(path_to_chain)
     unbroken_links = links_to_today(all_links)
-    print(HTML(f'<bold><purple>{title.upper()}</purple></bold>'))
+    print(HTML(f'<bold><purple bg="grey"> ▶ {title.upper()} ◀ </purple></bold>'))
     dates_with_colors = make_dates_with_colors(unbroken_links)
     output = make_blocks(dates_with_colors)
     print(HTML(output))
