@@ -22,6 +22,7 @@ chain-breaker
 
 Don't break the chain
 
+See https://lifehacker.com/how-seinfelds-productivity-secret-fixed-my-procrastinat-5886128
 
 * Free software: MIT license
 * Documentation: https://chain-breaker.readthedocs.io.
