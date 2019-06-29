@@ -5,6 +5,7 @@ import csv
 
 from prompt_toolkit import prompt, HTML
 from prompt_toolkit import print_formatted_text as print
+from prompt_toolkit.styles import Style
 from prompt_toolkit.shortcuts import clear
 
 import dateparser
@@ -12,6 +13,9 @@ import dateparser
 """Main module."""
 
 DateWithColor = namedtuple('DateWithColor', 'date color')
+
+
+style = Style.from_dict({'title': 'bg:grey fg:purple'})
 
 
 def read_in_all_links(path_to_chain):
@@ -58,7 +62,6 @@ def make_dates_with_colors(unbroken_links):
         if day > unbroken_links[-1]:
             remaining_days.append(day)
 
-    # return [DateWithColor(date=l, color='red') for l in unbroken_links]
     return [DateWithColor(date=l, color='red') for l in unbroken_links] + [
         DateWithColor(date=l, color='grey') for l in remaining_days
     ]
@@ -68,14 +71,23 @@ def render_chain(path_to_chain, title):
     clear()
     all_links = read_in_all_links(path_to_chain)
     unbroken_links = links_to_today(all_links)
-    print(HTML(f'<bold><purple bg="grey"> ▶ {title.upper()} ◀ </purple></bold>'))
     dates_with_colors = make_dates_with_colors(unbroken_links)
     output = make_blocks(dates_with_colors)
+    streak_count = len([d for d in dates_with_colors if d.color == 'red'])
+    print(
+        HTML(
+            f'<bold><title> ▶ {title.upper()} ◀ </title><title>({streak_count})</title></bold>'
+        ),
+        style=style,
+    )
     print(HTML(output))
 
 
 def make_block(d: DateWithColor):
-    letter = d.date.strftime('%A')[0].lower()
+    if d.date.strftime('%A') == 'Thursday':
+        letter = 'Þ'
+    else:
+        letter = d.date.strftime('%A')[0].lower()
     decorated = f"<bold><white>{letter}</white></bold>"
     return f"""\
 <{d.color}>▆▆▆</{d.color}>
@@ -94,7 +106,6 @@ def make_blocks(links):
         top += f'{t} '
         middle += f'{m} '
         bottom += f'{b} '
-    # breakpoint()
     return f"""\
 {top}
 {middle}
